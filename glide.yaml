@@ -1,0 +1,3 @@
+package: github.com/warmans/flashterm
+import:
+- package: github.com/logrusorgru/aurora
