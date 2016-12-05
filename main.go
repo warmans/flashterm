@@ -5,14 +5,14 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
-	"io"
 	"math/rand"
 	"os"
 
 	"time"
 
-	"github.com/logrusorgru/aurora"
 	"log"
+
+	"github.com/logrusorgru/aurora"
 )
 
 var dataPath = flag.String("data.path", "data.csv", "Location of flashcard data in csv format [question, answer]")
@@ -60,9 +60,10 @@ func main() {
 	reader := csv.NewReader(infile)
 	var pos int64
 	for {
+
 		line, err := reader.Read()
-		if err != nil && err != io.EOF {
-			log.Fatalf("Failed to read CSV: %s", aurora.Red(err.Error()))
+		if err != nil {
+			log.Fatalf("Failed to read CSV (or no data found in file): %s", aurora.Red(err.Error()))
 		}
 		if len(line) != 2 {
 			log.Fatalf("Malformed CSV. All rows should have two columns, %d has %d", randomLine, len(line))
@@ -81,6 +82,5 @@ func main() {
 	//do output
 	fmt.Printf("%s", card.SideA())
 	bufio.NewReader(os.Stdin).ReadString(byte(10))
-	fmt.Print("\033[1A")
-	fmt.Printf("%s > %s\n", card.SideA(), card.SideB())
+	fmt.Printf("\033[1A%s > %s\n", card.SideA(), card.SideB())
 }
