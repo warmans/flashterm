@@ -15,7 +15,8 @@ import (
 	"github.com/logrusorgru/aurora"
 )
 
-var dataPath = flag.String("data.path", "data.csv", "Location of flashcard data in csv format [question, answer]")
+var dataPath = flag.String("f", "", "Location of flashcard data in csv format [question, answer]")
+var specificLine = flag.Int64("l", 0, "Use a specific line instead of selecting one at random")
 
 type Card struct {
 	A    string
@@ -35,35 +36,53 @@ func main() {
 
 	flag.Parse()
 
+	if *dataPath == "" {
+		fmt.Print("Missing data source!\n")
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+
 	infile, err := os.Open(*dataPath)
 	if err != nil {
 		log.Fatalf("data file (%s) failed to open: %s", *dataPath, aurora.Red(err.Error()))
 	}
 	defer infile.Close()
 
-	//count lines in file
-	var numLines int64
-	scanner := bufio.NewScanner(infile)
+	var randomLine int64
 
-	for scanner.Scan() {
-		numLines++
+	if *specificLine == 0 {
+		//count lines in file
+		var numLines int64
+		scanner := bufio.NewScanner(infile)
+
+		for scanner.Scan() {
+			numLines++
+		}
+		infile.Seek(0, 0)
+
+		//pick a random line
+		rand.Seed(int64(time.Now().Nanosecond()))
+
+		if randomLine = rand.Int63n(numLines); randomLine == 0 {
+			randomLine = 1;
+		}
+	} else {
+		randomLine = *specificLine
 	}
-	infile.Seek(0, 0)
 
-	//pick a random line
-	rand.Seed(int64(time.Now().Nanosecond()))
-	randomLine := rand.Int63n(numLines)
+
 
 	var card *Card
 
 	//scan to random line and read it
 	reader := csv.NewReader(infile)
-	var pos int64
+
+	var pos int64 = 1 //
 	for {
 
 		line, err := reader.Read()
 		if err != nil {
-			log.Fatalf("Failed to read CSV (or no data found in file): %s", aurora.Red(err.Error()))
+			log.Fatalf("Failed to read CSV (or no data found in file): %s (looking for line %d)", aurora.Red(err.Error()), randomLine)
 		}
 		if len(line) != 2 {
 			log.Fatalf("Malformed CSV. All rows should have two columns, %d has %d", randomLine, len(line))
